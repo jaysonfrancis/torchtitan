@@ -85,14 +85,15 @@ def generate(
     prompt = prompt.view(1, -1) if prompt.ndim == 1 else prompt
 
     if custom_generate_next_token is None:
-        custom_generate_next_token = generate_next_token
+        _generate_next_token = generate_next_token
+    else:
+        _generate_next_token = custom_generate_next_token
 
     B, T = prompt.size()
 
     generated_tokens = prompt.clone()
 
-    # from model_config
-    vocab_size = 128256  # 34107 # 256
+    vocab_size = model.tok_embeddings.num_embeddings
 
     q = torch.empty((B, vocab_size), device=prompt.device).exponential_(
         1, generator=rng
@@ -115,7 +116,7 @@ def generate(
             1, generator=rng
         )
 
-        tokens, logits = custom_generate_next_token(
+        tokens, logits = _generate_next_token(
             model,
             x=tokens.clone(),
             temperature=temperature,
